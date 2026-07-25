@@ -1,0 +1,63 @@
+"use client";
+
+import { useRouter } from "next/navigation";
+import { useState } from "react";
+import { authClient } from "@/lib/auth-client";
+import { signUpSchema } from "@/lib/validators/auth";
+import { useAppForm } from "./form";
+
+export function SignUpForm() {
+  const router = useRouter();
+  const [serverError, setServerError] = useState<string | null>(null);
+
+  const form = useAppForm({
+    defaultValues: { name: "", email: "", password: "", confirmPassword: "" },
+    validators: {
+      onChange: signUpSchema,
+    },
+    onSubmit: async ({ value }) => {
+      setServerError(null);
+      const { error } = await authClient.signUp.email({
+        name: value.name,
+        email: value.email,
+        password: value.password,
+      });
+      if (error) {
+        setServerError(error.message ?? "Sign up failed");
+        return;
+      }
+      router.push("/dashboard");
+      router.refresh();
+    },
+  });
+
+  return (
+    <form
+      className="grid gap-4"
+      onSubmit={(e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        void form.handleSubmit();
+      }}
+    >
+      <form.AppField name="name">{(field) => <field.TextField label="Name" autoComplete="name" />}</form.AppField>
+      <form.AppField name="email">
+        {(field) => <field.TextField label="Email" type="email" autoComplete="email" />}
+      </form.AppField>
+      <form.AppField name="password">
+        {(field) => <field.TextField label="Password" type="password" autoComplete="new-password" />}
+      </form.AppField>
+      <form.AppField name="confirmPassword">
+        {(field) => <field.TextField label="Confirm password" type="password" autoComplete="new-password" />}
+      </form.AppField>
+      {serverError && (
+        <p role="alert" className="text-destructive text-sm">
+          {serverError}
+        </p>
+      )}
+      <form.AppForm>
+        <form.SubmitButton>Create account</form.SubmitButton>
+      </form.AppForm>
+    </form>
+  );
+}
