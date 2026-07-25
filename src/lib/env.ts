@@ -4,6 +4,7 @@ const serverSchema = z.object({
   DATABASE_URL: z.url(),
   BETTER_AUTH_SECRET: z.string().min(1),
   BETTER_AUTH_URL: z.url().default("http://localhost:3000"),
+  REALTIME_PORT: z.coerce.number().int().default(3001),
   NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
 });
 

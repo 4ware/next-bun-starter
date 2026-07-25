@@ -30,6 +30,7 @@ instead, use `bun --bun next dev`.
 | Script | Purpose |
 | --- | --- |
 | `bun run dev` / `build` / `start` | Next.js dev server / production build / serve |
+| `bun run dev:realtime` | Standalone WebSocket server (auth-gated live lobby, port 3001) |
 | `bun run typecheck` | `tsc --noEmit` |
 | `bun test` / `bun run test:watch` | Run the test suite (happy-dom preloaded via `bunfig.toml`) |
 | `bun run db:generate` | Generate SQL migrations from the Drizzle schema |
@@ -47,6 +48,7 @@ src/
     dashboard/                  # session-protected server component
   server/
     api/                        # Elysia app, auth macro, example /api/todos CRUD
+    realtime/                   # standalone Elysia WebSocket server (bun run dev:realtime)
     db/                         # drizzle client + schema (auth tables, todos)
     auth.ts                     # better-auth config (drizzle adapter, nextCookies plugin)
   components/
@@ -67,6 +69,14 @@ forwards every HTTP method to `api.handle`. better-auth keeps its own more
 specific route at `/api/auth/[...all]`, which Next.js matches first. The
 `authPlugin` macro resolves the better-auth session from request headers, so
 Elysia routes opt in with `{ authenticated: true }` and get typed `user`/`session`.
+
+**Realtime WebSockets.** Next.js route handlers can't upgrade to WebSocket, so
+`src/server/realtime` is a separate Elysia app run directly with Bun
+(`bun run dev:realtime`). It reuses the same better-auth instance: the browser
+sends the session cookie on the ws upgrade (same host, different port), and an
+instance-level `.resolve()` rejects handshakes without a session (401) or from
+foreign origins (403). The dashboard's `LivePanel` connects to
+`NEXT_PUBLIC_REALTIME_URL` for an auth-gated live lobby (presence + chat).
 
 **TanStack Form.** `src/components/forms/form.tsx` uses the `createFormHook`
 composition pattern: `TextField` and `SubmitButton` are bound to form context

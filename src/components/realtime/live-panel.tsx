@@ -1,0 +1,146 @@
+"use client";
+
+import { useCallback, useEffect, useRef, useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import type { RealtimeClientMessage, RealtimeEvent, RealtimeUser } from "@/lib/realtime";
+
+// Inlined by Next.js at build time — must be referenced directly
+// (src/lib/env.ts is server-only and would throw in the browser).
+const REALTIME_URL = process.env.NEXT_PUBLIC_REALTIME_URL ?? "ws://localhost:3001";
+
+const RECONNECT_DELAY_MS = 2500;
+const MAX_FEED_ITEMS = 100;
+
+type ConnectionStatus = "connecting" | "open" | "closed";
+
+type FeedItem = Exclude<RealtimeEvent, { type: "hello" }> & { key: string };
+
+function useRealtime() {
+  const [status, setStatus] = useState<ConnectionStatus>("connecting");
+  const [users, setUsers] = useState<RealtimeUser[]>([]);
+  const [feed, setFeed] = useState<FeedItem[]>([]);
+  const wsRef = useRef<WebSocket | null>(null);
+
+  useEffect(() => {
+    let disposed = false;
+    let reconnectTimer: ReturnType<typeof setTimeout> | undefined;
+    let keyCounter = 0;
+
+    function connect() {
+      setStatus("connecting");
+      const ws = new WebSocket(`${REALTIME_URL}/ws`);
+      wsRef.current = ws;
+
+      ws.onopen = () => setStatus("open");
+
+      ws.onmessage = (e) => {
+        const event = JSON.parse(String(e.data)) as RealtimeEvent;
+        if (event.type === "hello") {
+          setUsers(event.users);
+          return;
+        }
+        if (event.type === "join") {
+          setUsers((prev) => (prev.some((u) => u.id === event.user.id) ? prev : [...prev, event.user]));
+        } else if (event.type === "leave") {
+          setUsers((prev) => prev.filter((u) => u.id !== event.user.id));
+        }
+        setFeed((prev) => [...prev, { ...event, key: `${event.at}-${keyCounter++}` }].slice(-MAX_FEED_ITEMS));
+      };
+
+      ws.onclose = () => {
+        if (disposed) return;
+        setStatus("closed");
+        reconnectTimer = setTimeout(connect, RECONNECT_DELAY_MS);
+      };
+    }
+
+    connect();
+
+    return () => {
+      disposed = true;
+      clearTimeout(reconnectTimer);
+      wsRef.current?.close();
+    };
+  }, []);
+
+  const send = useCallback((message: RealtimeClientMessage) => {
+    if (wsRef.current?.readyState === WebSocket.OPEN) {
+      wsRef.current.send(JSON.stringify(message));
+    }
+  }, []);
+
+  return { status, users, feed, send };
+}
+
+export function LivePanel() {
+  const { status, users, feed, send } = useRealtime();
+  const [text, setText] = useState("");
+  const feedEndRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    feedEndRef.current?.scrollIntoView({ block: "nearest" });
+  }, [feed]);
+
+  function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    const trimmed = text.trim();
+    if (!trimmed) return;
+    send({ text: trimmed });
+    setText("");
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <div className="flex items-center justify-between">
+          <CardTitle>Live lobby</CardTitle>
+          <span className="text-muted-foreground flex items-center gap-1.5 text-xs">
+            <span
+              aria-hidden
+              className={`size-2 rounded-full ${
+                status === "open" ? "bg-emerald-500" : status === "connecting" ? "bg-amber-500" : "bg-destructive"
+              }`}
+            />
+            {status === "open" ? "Connected" : status === "connecting" ? "Connecting…" : "Reconnecting…"}
+          </span>
+        </div>
+        <CardDescription>
+          {users.length === 0 ? "Nobody online" : `Online: ${users.map((u) => u.name).join(", ")}`}
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="grid gap-4">
+        <div className="max-h-64 space-y-2 overflow-y-auto text-sm" role="log" aria-label="Lobby activity">
+          {feed.length === 0 && <p className="text-muted-foreground">No activity yet. Say hi!</p>}
+          {feed.map((item) => (
+            <p key={item.key}>
+              {item.type === "chat" ? (
+                <>
+                  <span className="font-medium">{item.user.name}:</span> {item.text}
+                </>
+              ) : (
+                <span className="text-muted-foreground">
+                  {item.user.name} {item.type === "join" ? "joined" : "left"}
+                </span>
+              )}
+            </p>
+          ))}
+          <div ref={feedEndRef} />
+        </div>
+        <form onSubmit={handleSubmit} className="flex gap-2">
+          <Input
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            placeholder="Send a message"
+            maxLength={500}
+            aria-label="Message"
+          />
+          <Button type="submit" disabled={status !== "open" || !text.trim()}>
+            Send
+          </Button>
+        </form>
+      </CardContent>
+    </Card>
+  );
+}
