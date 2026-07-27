@@ -1,6 +1,7 @@
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { nextCookies } from "better-auth/next-js";
+import { organization } from "better-auth/plugins";
 import { db } from "@/server/db";
 import * as schema from "@/server/db/schema";
 import { env } from "@/lib/env";
@@ -15,8 +16,8 @@ export const auth = betterAuth({
   emailAndPassword: {
     enabled: true,
   },
-  // Keep this last — makes cookies work in Next.js server actions.
-  plugins: [nextCookies()],
+  // nextCookies must stay last — makes cookies work in Next.js server actions.
+  plugins: [organization(), nextCookies()],
 });
 
 export type Session = typeof auth.$Infer.Session;

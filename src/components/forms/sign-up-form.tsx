@@ -6,12 +6,22 @@ import { authClient } from "@/lib/auth-client";
 import { signUpSchema } from "@/lib/validators/auth";
 import { useAppForm } from "./form";
 
+function toSlug(name: string) {
+  const base = name
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+  // Random suffix keeps the slug unique without an extra availability check.
+  return `${base}-${Math.random().toString(36).slice(2, 8)}`;
+}
+
 export function SignUpForm() {
   const router = useRouter();
   const [serverError, setServerError] = useState<string | null>(null);
 
   const form = useAppForm({
-    defaultValues: { name: "", email: "", password: "", confirmPassword: "" },
+    defaultValues: { name: "", organizationName: "", email: "", password: "", confirmPassword: "" },
     validators: {
       onChange: signUpSchema,
     },
@@ -24,6 +34,14 @@ export function SignUpForm() {
       });
       if (error) {
         setServerError(error.message ?? "Sign up failed");
+        return;
+      }
+      const { error: orgError } = await authClient.organization.create({
+        name: value.organizationName,
+        slug: toSlug(value.organizationName),
+      });
+      if (orgError) {
+        setServerError(orgError.message ?? "Failed to create organization");
         return;
       }
       router.push("/dashboard");
@@ -41,6 +59,9 @@ export function SignUpForm() {
       }}
     >
       <form.AppField name="name">{(field) => <field.TextField label="Name" autoComplete="name" />}</form.AppField>
+      <form.AppField name="organizationName">
+        {(field) => <field.TextField label="Organization name" autoComplete="organization" />}
+      </form.AppField>
       <form.AppField name="email">
         {(field) => <field.TextField label="Email" type="email" autoComplete="email" />}
       </form.AppField>
