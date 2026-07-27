@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { toast } from "sonner";
 import { authClient } from "@/lib/auth-client";
 import { signUpSchema } from "@/lib/validators/auth";
 import { useAppForm } from "./form";
@@ -18,7 +18,6 @@ function toSlug(name: string) {
 
 export function SignUpForm() {
   const router = useRouter();
-  const [serverError, setServerError] = useState<string | null>(null);
 
   const form = useAppForm({
     defaultValues: { name: "", organizationName: "", email: "", password: "", confirmPassword: "" },
@@ -26,14 +25,14 @@ export function SignUpForm() {
       onChange: signUpSchema,
     },
     onSubmit: async ({ value }) => {
-      setServerError(null);
       const { error } = await authClient.signUp.email({
         name: value.name,
         email: value.email,
         password: value.password,
       });
       if (error) {
-        setServerError(error.message ?? "Sign up failed");
+        // messages are already localized by the better-auth i18n plugin
+        toast.error(error.message ?? "Sign up failed");
         return;
       }
       const { error: orgError } = await authClient.organization.create({
@@ -41,7 +40,7 @@ export function SignUpForm() {
         slug: toSlug(value.organizationName),
       });
       if (orgError) {
-        setServerError(orgError.message ?? "Failed to create organization");
+        toast.error(orgError.message ?? "Failed to create organization");
         return;
       }
       router.push("/dashboard");
@@ -71,11 +70,6 @@ export function SignUpForm() {
       <form.AppField name="confirmPassword">
         {(field) => <field.TextField label="Confirm password" type="password" autoComplete="new-password" />}
       </form.AppField>
-      {serverError && (
-        <p role="alert" className="text-destructive text-sm">
-          {serverError}
-        </p>
-      )}
       <form.AppForm>
         <form.SubmitButton>Create account</form.SubmitButton>
       </form.AppForm>
