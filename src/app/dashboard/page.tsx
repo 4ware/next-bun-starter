@@ -1,13 +1,16 @@
 import { Suspense } from "react";
 import { dehydrate, HydrationBoundary, QueryClient } from "@tanstack/react-query";
+import Image from "next/image";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { auth } from "@/server/auth";
 import { getTodosForUser } from "@/server/todos-cache";
+import { PICTURE_SIZES } from "@/server/picture";
 import { todosKey } from "@/lib/todos";
 import { SignOutButton } from "@/components/sign-out-button";
 import { LivePanel } from "@/components/realtime/live-panel";
 import { TodoPanel } from "@/components/todos/todo-panel";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 /**
  * With Cache Components the static shell below renders instantly; the
@@ -25,8 +28,42 @@ export default function DashboardPage() {
       >
         <SessionContent />
       </Suspense>
+      <PictureCard />
       <LivePanel />
     </main>
+  );
+}
+
+/**
+ * The same generated PNG at three sizes via next/image. The source route
+ * /picture/[size] is force-static, so in production its bytes live in the
+ * Redis-backed incremental cache (see cache-handler.cjs).
+ */
+function PictureCard() {
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Optimized images</CardTitle>
+        <CardDescription>
+          One generated PNG served from <code className="font-mono">/picture/[size]</code> — statically cached (Redis
+          in production) — rendered by next/image at {PICTURE_SIZES.join(" / ")}px.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="flex flex-wrap items-end gap-4">
+        {PICTURE_SIZES.map((size) => (
+          <figure key={size} className="grid justify-items-center gap-1.5">
+            <Image
+              src={`/picture/${size}`}
+              width={size}
+              height={size}
+              alt={`Generated artwork at ${size}px`}
+              className="rounded-lg"
+            />
+            <figcaption className="text-muted-foreground text-xs">{size}px</figcaption>
+          </figure>
+        ))}
+      </CardContent>
+    </Card>
   );
 }
 

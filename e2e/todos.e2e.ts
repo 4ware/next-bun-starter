@@ -17,11 +17,11 @@ test.describe.serial("todo CRUD", () => {
 
   test("creates a todo and persists it", async ({ page }) => {
     await page.goto("/dashboard");
-    await page.getByLabel("New todo title").fill(title);
+    await page.getByRole("textbox", { name: "New todo title" }).fill(title);
     await page.getByRole("button", { name: "Add" }).click();
 
     await expect(todoItem(page)).toBeVisible();
-    await expect(page.getByLabel("New todo title")).toHaveValue("");
+    await expect(page.getByRole("textbox", { name: "New todo title" })).toHaveValue("");
 
     // survives a reload, i.e. actually hit the database
     await page.reload();
