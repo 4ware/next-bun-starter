@@ -1,2 +1,4 @@
 [test]
+# unit tests live in src; e2e/ belongs to Playwright (bun run test:e2e)
+root = "src"
 preload = ["./src/test/setup.ts"]

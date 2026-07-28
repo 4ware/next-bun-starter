@@ -9,3 +9,6 @@ build/
 next-env.d.ts
 drizzle/meta/_journal.json.bak
 .DS_Store
+test-results/
+playwright-report/
+e2e/.auth/

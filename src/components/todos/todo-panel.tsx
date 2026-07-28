@@ -1,94 +1,68 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useState } from "react";
 import { Trash2Icon } from "lucide-react";
-import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { request } from "@/lib/api";
 
 /** Wire shape of a todo — createdAt arrives as an ISO string over JSON. */
 type Todo = { id: string; title: string; done: boolean; userId: string; createdAt: string };
 
-/**
- * Fetch wrapper for the Elysia API. Non-2xx responses carry a normalized
- * { error: string } body (see the onError hook in src/server/api/index.ts),
- * which is thrown here so callers can hand it straight to sonner.
- */
-async function request<T>(path: string, init?: RequestInit): Promise<T> {
-  let res: Response;
-  try {
-    res = await fetch(path, {
-      ...init,
-      headers: init?.body ? { "Content-Type": "application/json", ...init.headers } : init?.headers,
-    });
-  } catch {
-    throw new Error("Network error — could not reach the server");
-  }
-  if (!res.ok) {
-    const body = (await res.json().catch(() => null)) as { error?: string } | null;
-    throw new Error(body?.error ?? `Request failed (${res.status})`);
-  }
-  return res.json() as Promise<T>;
-}
-
-function errorMessage(err: unknown) {
-  return err instanceof Error ? err.message : "Something went wrong";
-}
+const todosKey = ["todos"] as const;
 
 export function TodoPanel() {
-  const [todos, setTodos] = useState<Todo[]>([]);
   const [title, setTitle] = useState("");
-  const [loading, setLoading] = useState(true);
-  const [pending, setPending] = useState(false);
+  const queryClient = useQueryClient();
 
-  useEffect(() => {
-    request<Todo[]>("/api/todos")
-      .then(setTodos)
-      .catch((err) => toast.error(errorMessage(err)))
-      .finally(() => setLoading(false));
-  }, []);
+  // Failed queries/mutations toast automatically via the QueryClient's
+  // global onError (src/components/providers.tsx).
+  const { data: todos = [], isPending: loading } = useQuery({
+    queryKey: todosKey,
+    queryFn: () => request<Todo[]>("/api/todos"),
+  });
 
-  async function handleAdd(e: React.FormEvent) {
+  const createTodo = useMutation({
+    mutationFn: (newTitle: string) =>
+      request<Todo>("/api/todos", { method: "POST", body: JSON.stringify({ title: newTitle }) }),
+    onSuccess: (todo) => {
+      queryClient.setQueryData<Todo[]>(todosKey, (prev = []) => [todo, ...prev]);
+      setTitle("");
+    },
+  });
+
+  const toggleTodo = useMutation({
+    mutationFn: (todo: Todo) =>
+      request<Todo>(`/api/todos/${todo.id}`, { method: "PATCH", body: JSON.stringify({ done: !todo.done }) }),
+    // Optimistic flip; rolled back in onError if the server rejects it.
+    onMutate: async (todo) => {
+      await queryClient.cancelQueries({ queryKey: todosKey });
+      const previous = queryClient.getQueryData<Todo[]>(todosKey);
+      queryClient.setQueryData<Todo[]>(todosKey, (prev = []) =>
+        prev.map((t) => (t.id === todo.id ? { ...t, done: !t.done } : t)),
+      );
+      return { previous };
+    },
+    onError: (_err, _todo, context) => {
+      queryClient.setQueryData(todosKey, context?.previous);
+    },
+    onSettled: () => queryClient.invalidateQueries({ queryKey: todosKey }),
+  });
+
+  const deleteTodo = useMutation({
+    mutationFn: (todo: Todo) => request<{ deleted: string }>(`/api/todos/${todo.id}`, { method: "DELETE" }),
+    onSuccess: (_data, todo) => {
+      queryClient.setQueryData<Todo[]>(todosKey, (prev = []) => prev.filter((t) => t.id !== todo.id));
+    },
+  });
+
+  function handleAdd(e: React.FormEvent) {
     e.preventDefault();
     const trimmed = title.trim();
     if (!trimmed) return;
-    setPending(true);
-    try {
-      const todo = await request<Todo>("/api/todos", {
-        method: "POST",
-        body: JSON.stringify({ title: trimmed }),
-      });
-      setTodos((prev) => [todo, ...prev]);
-      setTitle("");
-    } catch (err) {
-      toast.error(errorMessage(err));
-    } finally {
-      setPending(false);
-    }
-  }
-
-  async function handleToggle(todo: Todo) {
-    // Optimistic flip; revert and toast if the server rejects it.
-    setTodos((prev) => prev.map((t) => (t.id === todo.id ? { ...t, done: !t.done } : t)));
-    try {
-      await request<Todo>(`/api/todos/${todo.id}`, {
-        method: "PATCH",
-        body: JSON.stringify({ done: !todo.done }),
-      });
-    } catch (err) {
-      setTodos((prev) => prev.map((t) => (t.id === todo.id ? { ...t, done: todo.done } : t)));
-      toast.error(errorMessage(err));
-    }
-  }
-
-  async function handleDelete(todo: Todo) {
-    try {
-      await request<{ deleted: string }>(`/api/todos/${todo.id}`, { method: "DELETE" });
-      setTodos((prev) => prev.filter((t) => t.id !== todo.id));
-    } catch (err) {
-      toast.error(errorMessage(err));
-    }
+    createTodo.mutate(trimmed);
   }
 
   return (
@@ -106,7 +80,7 @@ export function TodoPanel() {
             maxLength={200}
             aria-label="New todo title"
           />
-          <Button type="submit" disabled={pending || !title.trim()}>
+          <Button type="submit" disabled={createTodo.isPending || !title.trim()}>
             Add
           </Button>
         </form>
@@ -118,7 +92,7 @@ export function TodoPanel() {
               <input
                 type="checkbox"
                 checked={todo.done}
-                onChange={() => handleToggle(todo)}
+                onChange={() => toggleTodo.mutate(todo)}
                 aria-label={`Mark "${todo.title}" as ${todo.done ? "not done" : "done"}`}
                 className="accent-primary size-4"
               />
@@ -127,7 +101,7 @@ export function TodoPanel() {
                 variant="ghost"
                 size="icon"
                 className="ml-auto size-7"
-                onClick={() => handleDelete(todo)}
+                onClick={() => deleteTodo.mutate(todo)}
                 aria-label={`Delete "${todo.title}"`}
               >
                 <Trash2Icon className="size-4" />

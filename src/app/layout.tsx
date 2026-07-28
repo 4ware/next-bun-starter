@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Providers } from "@/components/providers";
 import { Toaster } from "@/components/ui/sonner";
 import "./globals.css";
 
@@ -11,7 +12,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
   return (
     <html lang="en">
       <body className="font-sans antialiased">
-        {children}
+        <Providers>{children}</Providers>
         <Toaster richColors />
       </body>
     </html>

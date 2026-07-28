@@ -13,10 +13,14 @@ bun run build / start              # production build / serve
 bun run typecheck                  # tsc --noEmit
 bun run lint                       # next lint
 
-bun test                           # run full test suite
+bun test                           # run unit test suite (src/ only, see bunfig.toml)
 bun run test:watch                 # watch mode
 bun test src/lib/validators/auth.test.ts   # run a single test file
 bun test -t "test name"            # filter by test name
+
+bun run test:e2e                   # Playwright e2e suite (needs Postgres, see below)
+bun run test:e2e:ui                # Playwright UI mode
+bunx playwright test e2e/todos.e2e.ts      # run a single e2e spec
 
 bun run db:generate                # generate SQL migration from schema changes
 bun run db:migrate                 # apply migrations
@@ -28,7 +32,7 @@ Copy `.env.example` to `.env` before running anything that touches the DB or aut
 
 ## Architecture
 
-Full-stack TypeScript app: Next.js 16 (App Router) + React 19, Bun as package manager/test runner, Elysia as the API layer, Drizzle ORM + Postgres, better-auth, Tailwind v4 + shadcn/ui, TanStack Form + Zod 4.
+Full-stack TypeScript app: Next.js 16 (App Router) + React 19, Bun as package manager/test runner, Elysia as the API layer, Drizzle ORM + Postgres, better-auth, Tailwind v4 + shadcn/ui, TanStack Form + Query + Zod 4.
 
 ```
 src/
@@ -67,6 +71,10 @@ Next.js route handlers cannot upgrade to WebSocket, so the realtime Elysia app (
 
 `src/lib/env.ts` uses `@t3-oss/env-nextjs` (`createEnv` with `server` / `client` / `shared` sections, zod schemas). The single `env` export is safe to import anywhere: client components can read `NEXT_PUBLIC_*` and `NODE_ENV`, while touching a server var from the client throws a descriptive error. New `NEXT_PUBLIC_*` vars must be added to both the `client` schema and `experimental__runtimeEnv` (Next.js inlines them at build time). `SKIP_ENV_VALIDATION=1` skips validation (e.g. for CI builds without secrets).
 
+### TanStack Query
+
+`src/components/providers.tsx` wraps the app in a `QueryClientProvider` (mounted in the root layout, inside `<Providers>`). The QueryClient's `QueryCache`/`MutationCache` `onError` handlers toast every failed query/mutation via sonner, so components don't handle request errors individually. Client requests go through `request()` in `src/lib/api.ts`, which throws the API's normalized `{ error }` message on non-2xx responses. See `src/components/todos/todo-panel.tsx` for the pattern (`useQuery` for the list, `useMutation` with an optimistic update + rollback for toggling). Tests render components inside `<Providers>` to get a fresh QueryClient per render.
+
 ### TanStack Form
 
 `src/components/forms/form.tsx` uses the `createFormHook` composition pattern: `TextField` and `SubmitButton` are bound to form context once via `createFormHookContexts()` and reused across every form (see `sign-in-form.tsx` / `sign-up-form.tsx`). Zod schemas plug directly into `validators: { onChange: schema }` since Zod implements Standard Schema — no adapter needed. Add new shared field components to this file rather than duplicating field markup per form.
@@ -74,6 +82,10 @@ Next.js route handlers cannot upgrade to WebSocket, so the realtime Elysia app (
 ### Testing
 
 `bunfig.toml` preloads `src/test/setup.ts` for every `bun test` run: registers happy-dom globals, extends `expect` with jest-dom matchers (typed via `src/test/matchers.d.ts`), and runs RTL `cleanup` after each test. Module mocks use `mock.module(...)`; import the component under test *after* the `mock.module` calls (see `sign-in-form.test.tsx`, which does the import inside `beforeAll`).
+
+### E2E tests (Playwright)
+
+Specs live in `e2e/` (named `*.e2e.ts` so `bun test` never picks them up; `bunfig.toml` additionally restricts bun test to `src/`). `playwright.config.ts` boots the Next dev server itself with env from `e2e/env.ts` — real env vars win, fallbacks target a throwaway Postgres on port `55432` (docker one-liner in `e2e/env.ts`). `e2e/global-setup.ts` runs `drizzle-kit push` against that DB before the suite. `auth.setup.ts` is a Playwright setup project that signs up a fresh user per run and saves its session to `e2e/.auth/user.json`; `todos.e2e.ts` reuses that storage state, while `auth.e2e.ts` drives sign-up/sign-in/sign-out itself with unique emails per test.
 
 ### shadcn/ui
 
