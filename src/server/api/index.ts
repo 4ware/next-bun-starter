@@ -10,6 +10,25 @@ import { todosRoutes } from "./routes/todos";
  * this catch-all because it is the more specific route.
  */
 export const api = new Elysia({ prefix: "/api" })
+  // Normalize every error into { error: string } so clients can toast it directly.
+  .onError(({ code, error, set }) => {
+    if (code === "VALIDATION") {
+      set.status = 422;
+      const [first] = error.all;
+      return { error: (first && "summary" in first && first.summary) || "Invalid request" };
+    }
+    if (code === "PARSE") {
+      set.status = 400;
+      return { error: "Invalid request body" };
+    }
+    if (code === "NOT_FOUND") {
+      set.status = 404;
+      return { error: "Not found" };
+    }
+    console.error(error);
+    set.status = 500;
+    return { error: "Internal server error" };
+  })
   .get("/health", () => ({ status: "ok" as const }))
   .use(todosRoutes);
 

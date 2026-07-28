@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { auth } from "@/server/auth";
 import { SignOutButton } from "@/components/sign-out-button";
 import { LivePanel } from "@/components/realtime/live-panel";
+import { TodoPanel } from "@/components/todos/todo-panel";
 
 export default async function DashboardPage() {
   const session = await auth.api.getSession({ headers: await headers() });
@@ -18,6 +19,7 @@ export default async function DashboardPage() {
         Signed in as <span className="text-foreground font-medium">{session.user.email}</span>. The example todos API
         lives at <code className="font-mono">/api/todos</code> (Elysia).
       </p>
+      <TodoPanel />
       <LivePanel />
     </main>
   );

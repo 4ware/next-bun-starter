@@ -34,7 +34,11 @@ export const todosRoutes = new Elysia({ prefix: "/todos" })
     {
       authenticated: true,
       params: t.Object({ id: t.String({ format: "uuid" }) }),
-      body: t.Partial(t.Object({ title: t.String({ minLength: 1, maxLength: 200 }), done: t.Boolean() })),
+      // minProperties rejects an empty patch, which drizzle's .set() cannot handle
+      body: t.Object(
+        { title: t.Optional(t.String({ minLength: 1, maxLength: 200 })), done: t.Optional(t.Boolean()) },
+        { minProperties: 1 },
+      ),
     },
   )
   .delete(
