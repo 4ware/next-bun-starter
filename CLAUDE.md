@@ -85,6 +85,10 @@ Next.js route handlers cannot upgrade to WebSocket, so the realtime Elysia app (
 
 `bunfig.toml` preloads `src/test/setup.ts` for every `bun test` run: registers happy-dom globals, extends `expect` with jest-dom matchers (typed via `src/test/matchers.d.ts`), and runs RTL `cleanup` after each test. Module mocks use `mock.module(...)`; import the component under test *after* the `mock.module` calls (see `sign-in-form.test.tsx`, which does the import inside `beforeAll`).
 
+### Redis cache handler
+
+`cache-handler.cjs` (project root, plain CommonJS — Next require()s it at runtime, so it reads `REDIS_URL` from `process.env` directly) backs Next's incremental cache with Redis: prerendered/ISR pages, the fetch data cache, and `revalidateTag`/`revalidatePath` (soft tags handled via per-tag revalidation timestamps). It is wired in `next.config.ts` for `NODE_ENV=production` only (`cacheMaxMemorySize: 0` disables the in-memory LRU); dev and tests use Next's default cache. When Redis is down it degrades to cache misses instead of failing requests. Unit tests: `src/server/cache-handler.test.ts` (in-memory fake of the node-redis client).
+
 ### E2E tests (Playwright)
 
 Specs live in `e2e/` (named `*.e2e.ts` so `bun test` never picks them up; `bunfig.toml` additionally restricts bun test to `src/`). `playwright.config.ts` boots the Next dev server itself with env from `e2e/env.ts` — real env vars win, fallbacks target the throwaway `db-test` compose service on port `55432` (`bun run docker:up`; tmpfs-backed, so restarting the service wipes it). `e2e/global-setup.ts` runs `drizzle-kit push` against that DB before the suite. `auth.setup.ts` is a Playwright setup project that signs up a fresh user per run and saves its session to `e2e/.auth/user.json`; `todos.e2e.ts` reuses that storage state, while `auth.e2e.ts` drives sign-up/sign-in/sign-out itself with unique emails per test.
