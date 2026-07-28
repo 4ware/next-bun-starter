@@ -5,10 +5,9 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import type { RealtimeClientMessage, RealtimeEvent, RealtimeUser } from "@/lib/realtime";
+import { env } from "@/lib/env";
 
-// Inlined by Next.js at build time — must be referenced directly
-// (src/lib/env.ts is server-only and would throw in the browser).
-const REALTIME_URL = process.env.NEXT_PUBLIC_REALTIME_URL ?? "ws://localhost:3001";
+const REALTIME_URL = env.NEXT_PUBLIC_REALTIME_URL;
 
 const RECONNECT_DELAY_MS = 2500;
 const MAX_FEED_ITEMS = 100;

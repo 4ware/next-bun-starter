@@ -61,11 +61,11 @@ Protected routes use the `authPlugin` macro (`src/server/api/auth-plugin.ts`): a
 
 ### Realtime WebSockets
 
-Next.js route handlers cannot upgrade to WebSocket, so the realtime Elysia app (`src/server/realtime/`) runs as its own Bun process (`bun run dev:realtime`, port `REALTIME_PORT`, default 3001). It shares the better-auth instance: the browser sends the session cookie on the upgrade request (same host, different port), an instance-level `.resolve()` rejects the handshake with 401 when there is no session (plus a 403 origin check), and `ws.data.user` is typed in the ws handlers. Wire types live in `src/lib/realtime.ts`, shared by server and client. The client (`src/components/realtime/live-panel.tsx`) reads `process.env.NEXT_PUBLIC_REALTIME_URL` directly — it cannot import `src/lib/env.ts` (see below). Note: the HTTP API and realtime server are separate processes, so HTTP routes can't publish to WS clients without a broker.
+Next.js route handlers cannot upgrade to WebSocket, so the realtime Elysia app (`src/server/realtime/`) runs as its own Bun process (`bun run dev:realtime`, port `REALTIME_PORT`, default 3001). It shares the better-auth instance: the browser sends the session cookie on the upgrade request (same host, different port), an instance-level `.resolve()` rejects the handshake with 401 when there is no session (plus a 403 origin check), and `ws.data.user` is typed in the ws handlers. Wire types live in `src/lib/realtime.ts`, shared by server and client. The client (`src/components/realtime/live-panel.tsx`) reads `env.NEXT_PUBLIC_REALTIME_URL` from `src/lib/env.ts`. Note: the HTTP API and realtime server are separate processes, so HTTP routes can't publish to WS clients without a broker.
 
 ### Env validation
 
-`src/lib/env.ts` splits `serverSchema` (DB url, auth secret, etc.) from `clientSchema` (`NEXT_PUBLIC_*`). Import `env` only from server code — it will throw at build/runtime if imported into a client component, since server vars are undefined there.
+`src/lib/env.ts` uses `@t3-oss/env-nextjs` (`createEnv` with `server` / `client` / `shared` sections, zod schemas). The single `env` export is safe to import anywhere: client components can read `NEXT_PUBLIC_*` and `NODE_ENV`, while touching a server var from the client throws a descriptive error. New `NEXT_PUBLIC_*` vars must be added to both the `client` schema and `experimental__runtimeEnv` (Next.js inlines them at build time). `SKIP_ENV_VALIDATION=1` skips validation (e.g. for CI builds without secrets).
 
 ### TanStack Form
 

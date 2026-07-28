@@ -22,6 +22,7 @@
     "@better-auth/i18n": "^1.6.25",
     "@radix-ui/react-label": "^2.1.8",
     "@radix-ui/react-slot": "^1.2.4",
+    "@t3-oss/env-nextjs": "^0.13.11",
     "@tanstack/react-form": "^1.33.2",
     "better-auth": "^1.6.25",
     "class-variance-authority": "^0.7.1",
