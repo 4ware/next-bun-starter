@@ -2,7 +2,7 @@ import { revalidateTag } from "next/cache";
 import { and, desc, eq } from "drizzle-orm";
 import { Elysia, t } from "elysia";
 import { db } from "@/server/db";
-import { todos } from "@/server/db/schema";
+import { todos, uploads } from "@/server/db/schema";
 import { todosTag } from "@/server/todos-cache";
 import { authPlugin } from "../auth-plugin";
 
@@ -58,6 +58,39 @@ export const todosRoutes = new Elysia({ prefix: "/todos" })
       ),
     },
   )
+  .post(
+    "/:id/image",
+    async ({ params, body, user, status }) => {
+      const [todo] = await db
+        .select()
+        .from(todos)
+        .where(and(eq(todos.id, params.id), eq(todos.userId, user.id)));
+      if (!todo) return status(404, { error: "Not found" });
+
+      const data = Buffer.from(await body.file.arrayBuffer());
+      const [upload] = await db
+        .insert(uploads)
+        .values({ userId: user.id, contentType: body.file.type, data })
+        .returning({ id: uploads.id });
+      const [updated] = await db
+        .update(todos)
+        .set({ imageId: upload!.id })
+        .where(eq(todos.id, todo.id))
+        .returning();
+      // replaced image is no longer referenced — drop the old bytes
+      if (todo.imageId) await db.delete(uploads).where(eq(uploads.id, todo.imageId));
+
+      revalidateTodosCache(user.id);
+      return updated;
+    },
+    {
+      authenticated: true,
+      params: t.Object({ id: t.String({ format: "uuid" }) }),
+      body: t.Object({
+        file: t.File({ type: ["image/jpeg", "image/png", "image/webp", "image/gif"], maxSize: "5m" }),
+      }),
+    },
+  )
   .delete(
     "/:id",
     async ({ params, user, status }) => {
@@ -66,6 +99,7 @@ export const todosRoutes = new Elysia({ prefix: "/todos" })
         .where(and(eq(todos.id, params.id), eq(todos.userId, user.id)))
         .returning();
       if (!todo) return status(404, { error: "Not found" });
+      if (todo.imageId) await db.delete(uploads).where(eq(uploads.id, todo.imageId));
       revalidateTodosCache(user.id);
       return { deleted: todo.id };
     },

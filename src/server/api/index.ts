@@ -1,5 +1,6 @@
 import { Elysia } from "elysia";
 import { todosRoutes } from "./routes/todos";
+import { uploadsRoutes } from "./routes/uploads";
 
 /**
  * The Elysia app is mounted inside Next.js via the optional catch-all
@@ -30,6 +31,7 @@ export const api = new Elysia({ prefix: "/api" })
     return { error: "Internal server error" };
   })
   .get("/health", () => ({ status: "ok" as const }))
-  .use(todosRoutes);
+  .use(todosRoutes)
+  .use(uploadsRoutes);
 
 export type Api = typeof api;

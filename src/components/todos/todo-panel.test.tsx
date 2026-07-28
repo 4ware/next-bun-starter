@@ -31,11 +31,12 @@ beforeEach(() => {
   window.localStorage.clear();
 });
 
-const aTodo = (over: Partial<{ id: string; title: string; done: boolean }> = {}) => ({
+const aTodo = (over: Partial<{ id: string; title: string; done: boolean; imageId: string | null }> = {}) => ({
   id: "6f1f0f0a-0000-4000-8000-000000000001",
   title: "Water the plants",
   done: false,
   userId: "u1",
+  imageId: null,
   createdAt: new Date().toISOString(),
   ...over,
 });
@@ -137,6 +138,16 @@ describe("TodoPanel", () => {
 
     await waitFor(() => expect(toastError).toHaveBeenCalledWith("Not found"));
     await waitFor(() => expect(screen.getByRole("checkbox", { name: /Water the plants/ })).not.toBeChecked());
+  });
+
+  test("offers an image upload button per todo and shows the uploaded image", async () => {
+    const withImage = aTodo({ imageId: "9a1f0f0a-0000-4000-8000-000000000009" });
+    fetchMock.mockResolvedValueOnce(jsonResponse([withImage]));
+    renderPanel();
+
+    const image = await screen.findByAltText('Image for "Water the plants"');
+    expect(image).toHaveAttribute("src", `/api/uploads/${withImage.imageId}`);
+    expect(screen.getByRole("button", { name: 'Upload image for "Water the plants"' })).toBeInTheDocument();
   });
 
   test("deletes a todo", async () => {

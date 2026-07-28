@@ -26,6 +26,8 @@
     "@better-auth/i18n": "^1.6.25",
     "@radix-ui/react-label": "^2.1.8",
     "@radix-ui/react-slot": "^1.2.4",
+    "@rpldy/upload-button": "^1.13.0",
+    "@rpldy/uploady": "^1.13.0",
     "@t3-oss/env-nextjs": "^0.13.11",
     "@tanstack/query-sync-storage-persister": "^5.101.4",
     "@tanstack/react-form": "^1.33.2",

@@ -15,6 +15,13 @@
       "when": 1785158862136,
       "tag": "0001_true_reptil",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1785245469059,
+      "tag": "0002_goofy_rick_jones",
+      "breakpoints": true
     }
   ]
 }

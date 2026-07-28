@@ -1,5 +1,6 @@
 import { expect, test } from "@playwright/test";
 import { authFile } from "./helpers";
+import { generatePicture } from "../src/server/picture";
 
 // Runs as the user created in auth.setup.ts.
 test.use({ storageState: authFile });
@@ -43,6 +44,27 @@ test.describe.serial("todo CRUD", () => {
 
     await page.reload();
     await expect(page.getByRole("checkbox", { name: `Mark "${title}" as not done` })).toBeChecked();
+  });
+
+  test("uploads an image via react-uploady and persists it", async ({ page }) => {
+    await page.goto("/dashboard");
+
+    const [chooser] = await Promise.all([
+      page.waitForEvent("filechooser"),
+      page.getByRole("button", { name: `Upload image for "${title}"` }).click(),
+    ]);
+    await chooser.setFiles({ name: "art.png", mimeType: "image/png", buffer: generatePicture(64) });
+
+    const thumbnail = page.getByRole("img", { name: `Image for "${title}"` });
+    await expect(thumbnail).toBeVisible();
+
+    // survives a reload, i.e. the image is stored server-side
+    await page.reload();
+    await expect(thumbnail).toBeVisible();
+    const src = await thumbnail.getAttribute("src");
+    const res = await page.request.get(src!);
+    expect(res.status()).toBe(200);
+    expect(res.headers()["content-type"]).toBe("image/png");
   });
 
   test("deletes the todo", async ({ page }) => {
