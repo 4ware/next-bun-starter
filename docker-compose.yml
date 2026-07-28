@@ -1,0 +1,53 @@
+# Local services for dev and tests: `bun run docker:up` / `bun run docker:down`.
+# Host ports can be overridden via env, e.g. POSTGRES_PORT=5433 if the default
+# is already taken by another project (remember to adjust DATABASE_URL in .env).
+services:
+  db:
+    image: postgres:16-alpine
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: next_bun_starter
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d next_bun_starter"]
+      interval: 2s
+      timeout: 3s
+      retries: 15
+
+  # Throwaway database for the Playwright e2e suite (see e2e/env.ts).
+  # Data lives in tmpfs, so `docker compose restart db-test` wipes it.
+  db-test:
+    image: postgres:16-alpine
+    ports:
+      - "${POSTGRES_TEST_PORT:-55432}:5432"
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: next_bun_starter_e2e
+    tmpfs:
+      - /var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d next_bun_starter_e2e"]
+      interval: 2s
+      timeout: 3s
+      retries: 15
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 2s
+      timeout: 3s
+      retries: 15
+
+volumes:
+  db-data:
+  redis-data:

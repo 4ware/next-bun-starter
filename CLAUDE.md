@@ -6,6 +6,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ```bash
 bun install                        # install deps
+bun run docker:up                  # start Postgres (dev + e2e) and Redis via docker compose
+bun run docker:down                # stop them
 bun run dev                        # Next.js dev server (Turbopack) on Node
 bun run dev:realtime               # standalone WebSocket server (port 3001, --watch)
 bun --bun next dev                 # dev server on the Bun runtime instead of Node
@@ -85,7 +87,7 @@ Next.js route handlers cannot upgrade to WebSocket, so the realtime Elysia app (
 
 ### E2E tests (Playwright)
 
-Specs live in `e2e/` (named `*.e2e.ts` so `bun test` never picks them up; `bunfig.toml` additionally restricts bun test to `src/`). `playwright.config.ts` boots the Next dev server itself with env from `e2e/env.ts` — real env vars win, fallbacks target a throwaway Postgres on port `55432` (docker one-liner in `e2e/env.ts`). `e2e/global-setup.ts` runs `drizzle-kit push` against that DB before the suite. `auth.setup.ts` is a Playwright setup project that signs up a fresh user per run and saves its session to `e2e/.auth/user.json`; `todos.e2e.ts` reuses that storage state, while `auth.e2e.ts` drives sign-up/sign-in/sign-out itself with unique emails per test.
+Specs live in `e2e/` (named `*.e2e.ts` so `bun test` never picks them up; `bunfig.toml` additionally restricts bun test to `src/`). `playwright.config.ts` boots the Next dev server itself with env from `e2e/env.ts` — real env vars win, fallbacks target the throwaway `db-test` compose service on port `55432` (`bun run docker:up`; tmpfs-backed, so restarting the service wipes it). `e2e/global-setup.ts` runs `drizzle-kit push` against that DB before the suite. `auth.setup.ts` is a Playwright setup project that signs up a fresh user per run and saves its session to `e2e/.auth/user.json`; `todos.e2e.ts` reuses that storage state, while `auth.e2e.ts` drives sign-up/sign-in/sign-out itself with unique emails per test.
 
 ### shadcn/ui
 

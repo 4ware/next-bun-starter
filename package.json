@@ -4,6 +4,8 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "docker:up": "docker compose up -d --wait",
+    "docker:down": "docker compose down",
     "dev:next": "next dev",
     "dev:realtime": "bun --watch src/server/realtime/serve.ts",
     "dev": "concurrently \"bun run dev:realtime\" \"bun run dev:next\"",
