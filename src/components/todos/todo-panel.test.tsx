@@ -27,6 +27,8 @@ afterAll(() => {
 beforeEach(() => {
   fetchMock.mockReset();
   toastError.mockClear();
+  // drop any query cache persisted to localStorage by a previous test
+  window.localStorage.clear();
 });
 
 const aTodo = (over: Partial<{ id: string; title: string; done: boolean }> = {}) => ({

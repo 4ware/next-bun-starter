@@ -7,11 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { request } from "@/lib/api";
-
-/** Wire shape of a todo — createdAt arrives as an ISO string over JSON. */
-type Todo = { id: string; title: string; done: boolean; userId: string; createdAt: string };
-
-const todosKey = ["todos"] as const;
+import { fetchTodos, todosKey, type Todo } from "@/lib/todos";
 
 export function TodoPanel() {
   const [title, setTitle] = useState("");
@@ -21,7 +17,7 @@ export function TodoPanel() {
   // global onError (src/components/providers.tsx).
   const { data: todos = [], isPending: loading } = useQuery({
     queryKey: todosKey,
-    queryFn: () => request<Todo[]>("/api/todos"),
+    queryFn: fetchTodos,
   });
 
   const createTodo = useMutation({
