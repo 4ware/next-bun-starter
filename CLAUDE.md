@@ -85,6 +85,10 @@ Next.js route handlers cannot upgrade to WebSocket, so the realtime Elysia app (
 
 `bunfig.toml` preloads `src/test/setup.ts` for every `bun test` run: registers happy-dom globals, extends `expect` with jest-dom matchers (typed via `src/test/matchers.d.ts`), and runs RTL `cleanup` after each test. Module mocks use `mock.module(...)`; import the component under test *after* the `mock.module` calls (see `sign-in-form.test.tsx`, which does the import inside `beforeAll`).
 
+### Cache Components (Next 16)
+
+`cacheComponents: true` is enabled in `next.config.ts`: pages are dynamic by default, and any uncached IO (`headers()`, session, db) must render inside a `<Suspense>` boundary — `/` and `/dashboard` are Partial Prerender routes (static shell + streamed session content in a Suspense'd server component). `src/server/todos-cache.ts` is the `"use cache"` example: `getTodosForUser(userId)` caches per user (arg is part of the cache key), tagged via `cacheTag` with `cacheLife("hours")`. The Elysia todo mutation routes revalidate it with `revalidateTag(tag, { expire: 0 })` — `{ expire: 0 }` gives read-your-writes (immediate expiry); the string profiles like `"max"` are serve-stale-while-revalidate and will serve stale data on the next request. The dashboard prefetches from this cached function instead of hitting the API. E2E note: dev-mode PPR streaming leaves a hidden duplicate of suspended content in the DOM, so todo assertions use `getByRole` (role queries skip hidden elements).
+
 ### Redis cache handler
 
 `cache-handler.cjs` (project root, plain CommonJS — Next require()s it at runtime, so it reads `REDIS_URL` from `process.env` directly) backs Next's incremental cache with Redis: prerendered/ISR pages, the fetch data cache, and `revalidateTag`/`revalidatePath` (soft tags handled via per-tag revalidation timestamps). It is wired in `next.config.ts` for `NODE_ENV=production` only (`cacheMaxMemorySize: 0` disables the in-memory LRU); dev and tests use Next's default cache. When Redis is down it degrades to cache misses instead of failing requests. Unit tests: `src/server/cache-handler.test.ts` (in-memory fake of the node-redis client).

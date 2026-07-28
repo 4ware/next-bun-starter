@@ -1,8 +1,23 @@
+import { revalidateTag } from "next/cache";
 import { and, desc, eq } from "drizzle-orm";
 import { Elysia, t } from "elysia";
 import { db } from "@/server/db";
 import { todos } from "@/server/db/schema";
+import { todosTag } from "@/server/todos-cache";
 import { authPlugin } from "../auth-plugin";
+
+// The Elysia app runs inside a Next.js route handler, where revalidateTag
+// invalidates the "use cache" entry from src/server/todos-cache.ts.
+// { expire: 0 } expires the entry immediately (read-your-writes) instead of
+// "max"'s serve-stale-while-revalidating. The catch keeps the routes usable
+// outside a Next request context (e.g. tests).
+function revalidateTodosCache(userId: string) {
+  try {
+    revalidateTag(todosTag(userId), { expire: 0 });
+  } catch (err) {
+    console.error("[todos] revalidateTag failed:", err);
+  }
+}
 
 export const todosRoutes = new Elysia({ prefix: "/todos" })
   .use(authPlugin)
@@ -13,6 +28,7 @@ export const todosRoutes = new Elysia({ prefix: "/todos" })
     "/",
     async ({ body, user, status }) => {
       const [todo] = await db.insert(todos).values({ title: body.title, userId: user.id }).returning();
+      revalidateTodosCache(user.id);
       return status(201, todo);
     },
     {
@@ -29,6 +45,7 @@ export const todosRoutes = new Elysia({ prefix: "/todos" })
         .where(and(eq(todos.id, params.id), eq(todos.userId, user.id)))
         .returning();
       if (!todo) return status(404, { error: "Not found" });
+      revalidateTodosCache(user.id);
       return todo;
     },
     {
@@ -49,6 +66,7 @@ export const todosRoutes = new Elysia({ prefix: "/todos" })
         .where(and(eq(todos.id, params.id), eq(todos.userId, user.id)))
         .returning();
       if (!todo) return status(404, { error: "Not found" });
+      revalidateTodosCache(user.id);
       return { deleted: todo.id };
     },
     {

@@ -6,26 +6,37 @@ test.use({ storageState: authFile });
 
 // The three tests walk one todo through create → update → delete, so they
 // must run in order and share the same title.
+//
+// Assertions go through getByRole/filter on listitems: role queries skip
+// hidden elements, which matters because dev-mode PPR streaming leaves a
+// hidden duplicate of the suspended content in the DOM.
 test.describe.serial("todo CRUD", () => {
   const title = `Buy oat milk ${Date.now()}`;
+  const todoItem = (page: import("@playwright/test").Page) =>
+    page.getByRole("listitem").filter({ hasText: title });
 
   test("creates a todo and persists it", async ({ page }) => {
     await page.goto("/dashboard");
     await page.getByLabel("New todo title").fill(title);
     await page.getByRole("button", { name: "Add" }).click();
 
-    await expect(page.getByText(title, { exact: true })).toBeVisible();
+    await expect(todoItem(page)).toBeVisible();
     await expect(page.getByLabel("New todo title")).toHaveValue("");
 
     // survives a reload, i.e. actually hit the database
     await page.reload();
-    await expect(page.getByText(title, { exact: true })).toBeVisible();
+    await expect(todoItem(page)).toBeVisible();
   });
 
   test("toggles the todo done and persists the state", async ({ page }) => {
     await page.goto("/dashboard");
+    // the flip is optimistic, so wait for the PATCH to land before reloading
+    const patched = page.waitForResponse(
+      (res) => res.request().method() === "PATCH" && res.url().includes("/api/todos/") && res.ok(),
+    );
     // click, not check(): the accessible name flips to "…as not done" mid-action
     await page.getByRole("checkbox", { name: `Mark "${title}" as done` }).click();
+    await patched;
 
     const checkbox = page.getByRole("checkbox", { name: `Mark "${title}" as not done` });
     await expect(checkbox).toBeChecked();
@@ -38,10 +49,10 @@ test.describe.serial("todo CRUD", () => {
     await page.goto("/dashboard");
     await page.getByRole("button", { name: `Delete "${title}"` }).click();
 
-    await expect(page.getByText(title, { exact: true })).toHaveCount(0);
+    await expect(todoItem(page)).toHaveCount(0);
 
     await page.reload();
-    await expect(page.getByText("Nothing yet.")).toBeVisible();
-    await expect(page.getByText(title, { exact: true })).toHaveCount(0);
+    await expect(page.getByRole("listitem").filter({ hasText: "Nothing yet." })).toBeVisible();
+    await expect(todoItem(page)).toHaveCount(0);
   });
 });
