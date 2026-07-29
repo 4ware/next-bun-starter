@@ -1,6 +1,7 @@
 "use client";
 
 import { createFormHook, createFormHookContexts } from "@tanstack/react-form";
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -42,12 +43,13 @@ function TextField({ label, type = "text", ...props }: { label: string } & React
 /** Submit button that disables itself while the form is submitting or invalid. */
 function SubmitButton({ children }: { children: React.ReactNode }) {
   const form = useFormContext();
+  const t = useTranslations("Form");
 
   return (
     <form.Subscribe selector={(state) => [state.canSubmit, state.isSubmitting]}>
       {([canSubmit, isSubmitting]) => (
         <Button type="submit" disabled={!canSubmit || isSubmitting} className="w-full">
-          {isSubmitting ? "Submitting…" : children}
+          {isSubmitting ? t("submitting") : children}
         </Button>
       )}
     </form.Subscribe>

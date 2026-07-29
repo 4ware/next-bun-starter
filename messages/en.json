@@ -1,0 +1,87 @@
+{
+  "Home": {
+    "title": "Next Bun Starter",
+    "tagline": "Next.js 16 · Bun · Elysia · Drizzle · better-auth · Tailwind v4 · shadcn/ui · TanStack Form · Zod",
+    "signIn": "Sign in",
+    "createAccount": "Create account",
+    "goToDashboard": "Go to dashboard"
+  },
+  "SignIn": {
+    "title": "Sign in",
+    "description": "Use your email and password to sign in.",
+    "noAccount": "No account yet?",
+    "createOne": "Create one"
+  },
+  "SignUp": {
+    "title": "Create account",
+    "description": "Sign up with your email and a password.",
+    "alreadyRegistered": "Already registered?",
+    "signIn": "Sign in"
+  },
+  "AuthForm": {
+    "name": "Name",
+    "organizationName": "Organization name",
+    "email": "Email",
+    "password": "Password",
+    "confirmPassword": "Confirm password",
+    "signIn": "Sign in",
+    "createAccount": "Create account",
+    "signInFailed": "Sign in failed",
+    "signUpFailed": "Sign up failed",
+    "createOrganizationFailed": "Failed to create organization"
+  },
+  "Validation": {
+    "email": "Enter a valid email address",
+    "passwordMin": "Password must be at least 8 characters",
+    "nameMin": "Name must be at least 2 characters",
+    "organizationNameMin": "Organization name must be at least 2 characters",
+    "passwordsMismatch": "Passwords do not match"
+  },
+  "Form": {
+    "submitting": "Submitting…"
+  },
+  "Dashboard": {
+    "title": "Dashboard",
+    "signOut": "Sign out",
+    "signedInAs": "Signed in as <email></email>. The example todos API lives at <code>/api/todos</code> (Elysia)."
+  },
+  "Todos": {
+    "title": "Todos",
+    "description": "Backed by the Elysia API at /api/todos — errors surface as toasts.",
+    "placeholder": "What needs doing?",
+    "newTodoTitle": "New todo title",
+    "add": "Add",
+    "loading": "Loading…",
+    "empty": "Nothing yet.",
+    "markDone": "Mark \"{title}\" as done",
+    "markNotDone": "Mark \"{title}\" as not done",
+    "delete": "Delete \"{title}\"",
+    "uploadImage": "Upload image for \"{title}\"",
+    "imageFor": "Image for \"{title}\"",
+    "imageUploaded": "Image uploaded",
+    "uploadFailed": "Upload failed ({reason})"
+  },
+  "Pictures": {
+    "title": "Optimized images",
+    "description": "One generated PNG served from <code>/picture/[size]</code> — statically cached (Redis in production) — rendered by next/image at {sizes}px.",
+    "alt": "Generated artwork at {size}px"
+  },
+  "Live": {
+    "title": "Live lobby",
+    "connected": "Connected",
+    "connecting": "Connecting…",
+    "reconnecting": "Reconnecting…",
+    "nobodyOnline": "Nobody online",
+    "online": "Online: {names}",
+    "noActivity": "No activity yet. Say hi!",
+    "joined": "{name} joined",
+    "left": "{name} left",
+    "activityLog": "Lobby activity",
+    "message": "Message",
+    "placeholder": "Send a message",
+    "send": "Send"
+  },
+  "LocaleSwitcher": {
+    "label": "Language"
+  }
+}

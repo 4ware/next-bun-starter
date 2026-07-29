@@ -1,5 +1,6 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, test } from "bun:test";
 import { act, render, screen } from "@testing-library/react";
+import { IntlWrapper } from "@/test/intl";
 import userEvent from "@testing-library/user-event";
 import type { RealtimeEvent } from "@/lib/realtime";
 
@@ -62,7 +63,7 @@ beforeEach(() => {
 });
 
 function renderConnected() {
-  render(<LivePanel />);
+  render(<LivePanel />, { wrapper: IntlWrapper });
   const ws = FakeWebSocket.instances[0]!;
   act(() => ws.open());
   return ws;
@@ -72,7 +73,7 @@ const alice = { id: "1", name: "Alice" };
 
 describe("LivePanel", () => {
   test("shows the connecting state until the socket opens", () => {
-    render(<LivePanel />);
+    render(<LivePanel />, { wrapper: IntlWrapper });
     expect(screen.getByText("Connecting…")).toBeInTheDocument();
 
     act(() => FakeWebSocket.instances[0]!.open());
@@ -116,7 +117,7 @@ describe("LivePanel", () => {
   });
 
   test("disables send while disconnected", async () => {
-    render(<LivePanel />);
+    render(<LivePanel />, { wrapper: IntlWrapper });
     const user = userEvent.setup();
 
     await user.type(screen.getByLabelText("Message"), "hello");

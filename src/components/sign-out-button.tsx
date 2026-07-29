@@ -1,7 +1,8 @@
 "use client";
 
 import { useQueryClient } from "@tanstack/react-query";
-import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
+import { useRouter } from "@/i18n/navigation";
 import { authClient } from "@/lib/auth-client";
 import { Button } from "@/components/ui/button";
 import { QUERY_CACHE_STORAGE_KEY } from "@/components/providers";
@@ -9,6 +10,7 @@ import { QUERY_CACHE_STORAGE_KEY } from "@/components/providers";
 export function SignOutButton() {
   const router = useRouter();
   const queryClient = useQueryClient();
+  const t = useTranslations("Dashboard");
 
   return (
     <Button
@@ -23,7 +25,7 @@ export function SignOutButton() {
         router.refresh();
       }}
     >
-      Sign out
+      {t("signOut")}
     </Button>
   );
 }

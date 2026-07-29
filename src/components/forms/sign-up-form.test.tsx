@@ -1,5 +1,6 @@
 import { beforeAll, beforeEach, describe, expect, mock, test } from "bun:test";
 import { render, screen, waitFor } from "@testing-library/react";
+import { IntlWrapper } from "@/test/intl";
 import userEvent from "@testing-library/user-event";
 
 const push = mock();
@@ -8,7 +9,7 @@ const signUpEmail = mock(async () => ({ data: null, error: null }));
 const createOrganization = mock(async () => ({ data: null, error: null }));
 const toastError = mock();
 
-mock.module("next/navigation", () => ({
+mock.module("@/i18n/navigation", () => ({
   useRouter: () => ({ push, refresh }),
 }));
 
@@ -50,7 +51,7 @@ async function fillValidForm(user: ReturnType<typeof userEvent.setup>) {
 describe("SignUpForm", () => {
   test("shows a validation error when passwords do not match", async () => {
     const user = userEvent.setup();
-    render(<SignUpForm />);
+    render(<SignUpForm />, { wrapper: IntlWrapper });
 
     await user.type(screen.getByLabelText("Password"), "supersecret");
     await user.type(screen.getByLabelText("Confirm password"), "different");
@@ -62,7 +63,7 @@ describe("SignUpForm", () => {
 
   test("creates the account and the organization, then redirects", async () => {
     const user = userEvent.setup();
-    render(<SignUpForm />);
+    render(<SignUpForm />, { wrapper: IntlWrapper });
 
     await fillValidForm(user);
     await user.click(screen.getByRole("button", { name: "Create account" }));
@@ -81,7 +82,7 @@ describe("SignUpForm", () => {
   test("toasts the error and stops when sign-up fails", async () => {
     signUpEmail.mockResolvedValue({ data: null, error: { message: "Email already in use" } } as never);
     const user = userEvent.setup();
-    render(<SignUpForm />);
+    render(<SignUpForm />, { wrapper: IntlWrapper });
 
     await fillValidForm(user);
     await user.click(screen.getByRole("button", { name: "Create account" }));
@@ -94,7 +95,7 @@ describe("SignUpForm", () => {
   test("toasts the error when organization creation fails", async () => {
     createOrganization.mockResolvedValue({ data: null, error: { message: "Slug already taken" } } as never);
     const user = userEvent.setup();
-    render(<SignUpForm />);
+    render(<SignUpForm />, { wrapper: IntlWrapper });
 
     await fillValidForm(user);
     await user.click(screen.getByRole("button", { name: "Create account" }));

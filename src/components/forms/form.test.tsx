@@ -1,5 +1,6 @@
 import { describe, expect, mock, test } from "bun:test";
 import { render, screen, waitFor } from "@testing-library/react";
+import { IntlWrapper } from "@/test/intl";
 import userEvent from "@testing-library/user-event";
 import { z } from "zod";
 import { useAppForm } from "./form";
@@ -32,13 +33,13 @@ function TestForm({ onSubmit }: { onSubmit: (value: { nickname: string }) => voi
 
 describe("form composition (TextField + SubmitButton)", () => {
   test("associates the label with the input", () => {
-    render(<TestForm onSubmit={mock()} />);
+    render(<TestForm onSubmit={mock()} />, { wrapper: IntlWrapper });
     expect(screen.getByLabelText("Nickname")).toBeInTheDocument();
   });
 
   test("shows the validation error only after the field was touched", async () => {
     const user = userEvent.setup();
-    render(<TestForm onSubmit={mock()} />);
+    render(<TestForm onSubmit={mock()} />, { wrapper: IntlWrapper });
 
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
 
@@ -52,7 +53,7 @@ describe("form composition (TextField + SubmitButton)", () => {
 
   test("disables the submit button while invalid and enables it when valid", async () => {
     const user = userEvent.setup();
-    render(<TestForm onSubmit={mock()} />);
+    render(<TestForm onSubmit={mock()} />, { wrapper: IntlWrapper });
 
     await user.type(screen.getByLabelText("Nickname"), "ab");
     expect(screen.getByRole("button", { name: "Save" })).toBeDisabled();
@@ -64,7 +65,7 @@ describe("form composition (TextField + SubmitButton)", () => {
   test("submits the field value", async () => {
     const onSubmit = mock();
     const user = userEvent.setup();
-    render(<TestForm onSubmit={onSubmit} />);
+    render(<TestForm onSubmit={onSubmit} />, { wrapper: IntlWrapper });
 
     await user.type(screen.getByLabelText("Nickname"), "kai");
     await user.click(screen.getByRole("button", { name: "Save" }));

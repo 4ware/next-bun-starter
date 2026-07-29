@@ -1,12 +1,13 @@
 import { beforeAll, beforeEach, describe, expect, mock, test } from "bun:test";
 import { render, screen, waitFor } from "@testing-library/react";
+import { IntlWrapper } from "@/test/intl";
 import userEvent from "@testing-library/user-event";
 
 const push = mock();
 const refresh = mock();
 const signOut = mock(async () => ({}));
 
-mock.module("next/navigation", () => ({
+mock.module("@/i18n/navigation", () => ({
   useRouter: () => ({ push, refresh }),
 }));
 
@@ -35,9 +36,11 @@ describe("SignOutButton", () => {
     window.localStorage.setItem(QUERY_CACHE_STORAGE_KEY, '{"cached":"data"}');
     const user = userEvent.setup();
     render(
-      <Providers>
-        <SignOutButton />
-      </Providers>,
+      <IntlWrapper>
+        <Providers>
+          <SignOutButton />
+        </Providers>
+      </IntlWrapper>,
     );
 
     await user.click(screen.getByRole("button", { name: "Sign out" }));

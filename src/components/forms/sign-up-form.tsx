@@ -1,9 +1,11 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { useMemo } from "react";
+import { useTranslations } from "next-intl";
 import { toast } from "sonner";
+import { useRouter } from "@/i18n/navigation";
 import { authClient } from "@/lib/auth-client";
-import { signUpSchema } from "@/lib/validators/auth";
+import { createSignUpSchema } from "@/lib/validators/auth";
 import { useAppForm } from "./form";
 
 function toSlug(name: string) {
@@ -18,11 +20,14 @@ function toSlug(name: string) {
 
 export function SignUpForm() {
   const router = useRouter();
+  const t = useTranslations("AuthForm");
+  const tValidation = useTranslations("Validation");
+  const schema = useMemo(() => createSignUpSchema(tValidation), [tValidation]);
 
   const form = useAppForm({
     defaultValues: { name: "", organizationName: "", email: "", password: "", confirmPassword: "" },
     validators: {
-      onChange: signUpSchema,
+      onChange: schema,
     },
     onSubmit: async ({ value }) => {
       const { error } = await authClient.signUp.email({
@@ -32,7 +37,7 @@ export function SignUpForm() {
       });
       if (error) {
         // messages are already localized by the better-auth i18n plugin
-        toast.error(error.message ?? "Sign up failed");
+        toast.error(error.message ?? t("signUpFailed"));
         return;
       }
       const { error: orgError } = await authClient.organization.create({
@@ -40,7 +45,7 @@ export function SignUpForm() {
         slug: toSlug(value.organizationName),
       });
       if (orgError) {
-        toast.error(orgError.message ?? "Failed to create organization");
+        toast.error(orgError.message ?? t("createOrganizationFailed"));
         return;
       }
       router.push("/dashboard");
@@ -57,21 +62,21 @@ export function SignUpForm() {
         void form.handleSubmit();
       }}
     >
-      <form.AppField name="name">{(field) => <field.TextField label="Name" autoComplete="name" />}</form.AppField>
+      <form.AppField name="name">{(field) => <field.TextField label={t("name")} autoComplete="name" />}</form.AppField>
       <form.AppField name="organizationName">
-        {(field) => <field.TextField label="Organization name" autoComplete="organization" />}
+        {(field) => <field.TextField label={t("organizationName")} autoComplete="organization" />}
       </form.AppField>
       <form.AppField name="email">
-        {(field) => <field.TextField label="Email" type="email" autoComplete="email" />}
+        {(field) => <field.TextField label={t("email")} type="email" autoComplete="email" />}
       </form.AppField>
       <form.AppField name="password">
-        {(field) => <field.TextField label="Password" type="password" autoComplete="new-password" />}
+        {(field) => <field.TextField label={t("password")} type="password" autoComplete="new-password" />}
       </form.AppField>
       <form.AppField name="confirmPassword">
-        {(field) => <field.TextField label="Confirm password" type="password" autoComplete="new-password" />}
+        {(field) => <field.TextField label={t("confirmPassword")} type="password" autoComplete="new-password" />}
       </form.AppField>
       <form.AppForm>
-        <form.SubmitButton>Create account</form.SubmitButton>
+        <form.SubmitButton>{t("createAccount")}</form.SubmitButton>
       </form.AppForm>
     </form>
   );

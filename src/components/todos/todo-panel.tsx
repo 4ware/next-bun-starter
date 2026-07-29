@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { useTranslations } from "next-intl";
 import { request } from "@/lib/api";
 import { fetchTodos, todosKey, type Todo } from "@/lib/todos";
 
@@ -22,16 +23,19 @@ const AttachImageButton = asUploadButton(
 /** Bridges react-uploady events into the query cache + sonner. */
 function UploadEvents() {
   const queryClient = useQueryClient();
+  const t = useTranslations("Todos");
 
   useItemFinishListener(() => {
     void queryClient.invalidateQueries({ queryKey: todosKey });
-    toast.success("Image uploaded");
+    toast.success(t("imageUploaded"));
   });
 
   useItemErrorListener((item) => {
     const data = item.uploadResponse?.data as { error?: string } | string | undefined;
     const message =
-      typeof data === "object" && data?.error ? data.error : `Upload failed (${item.uploadStatus || "network error"})`;
+      typeof data === "object" && data?.error
+        ? data.error
+        : t("uploadFailed", { reason: item.uploadStatus || "network error" });
     toast.error(message);
   });
 
@@ -41,6 +45,7 @@ function UploadEvents() {
 export function TodoPanel() {
   const [title, setTitle] = useState("");
   const queryClient = useQueryClient();
+  const t = useTranslations("Todos");
 
   // Failed queries/mutations toast automatically via the QueryClient's
   // global onError (src/components/providers.tsx).
@@ -93,34 +98,34 @@ export function TodoPanel() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Todos</CardTitle>
-        <CardDescription>Backed by the Elysia API at /api/todos — errors surface as toasts.</CardDescription>
+        <CardTitle>{t("title")}</CardTitle>
+        <CardDescription>{t("description")}</CardDescription>
       </CardHeader>
       <CardContent className="grid gap-4">
         <form onSubmit={handleAdd} className="flex gap-2">
           <Input
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            placeholder="What needs doing?"
+            placeholder={t("placeholder")}
             maxLength={200}
-            aria-label="New todo title"
+            aria-label={t("newTodoTitle")}
           />
           <Button type="submit" disabled={createTodo.isPending || !title.trim()}>
-            Add
+            {t("add")}
           </Button>
         </form>
         <Uploady autoUpload multiple={false} accept="image/*">
           <UploadEvents />
           <ul className="space-y-2 text-sm">
-            {loading && <li className="text-muted-foreground">Loading…</li>}
-            {!loading && todos.length === 0 && <li className="text-muted-foreground">Nothing yet.</li>}
+            {loading && <li className="text-muted-foreground">{t("loading")}</li>}
+            {!loading && todos.length === 0 && <li className="text-muted-foreground">{t("empty")}</li>}
             {todos.map((todo) => (
               <li key={todo.id} className="flex items-center gap-2">
                 <input
                   type="checkbox"
                   checked={todo.done}
                   onChange={() => toggleTodo.mutate(todo)}
-                  aria-label={`Mark "${todo.title}" as ${todo.done ? "not done" : "done"}`}
+                  aria-label={todo.done ? t("markNotDone", { title: todo.title }) : t("markDone", { title: todo.title })}
                   className="accent-primary size-4"
                 />
                 {todo.imageId && (
@@ -128,7 +133,7 @@ export function TodoPanel() {
                   // next/image optimizer would not forward
                   <img
                     src={`/api/uploads/${todo.imageId}`}
-                    alt={`Image for "${todo.title}"`}
+                    alt={t("imageFor", { title: todo.title })}
                     className="size-8 rounded object-cover"
                   />
                 )}
@@ -137,7 +142,7 @@ export function TodoPanel() {
                   <AttachImageButton
                     destination={{ url: `/api/todos/${todo.id}/image` }}
                     extraProps={{
-                      "aria-label": `Upload image for "${todo.title}"`,
+                      "aria-label": t("uploadImage", { title: todo.title }),
                       children: <ImagePlusIcon className="size-4" />,
                     }}
                   />
@@ -146,7 +151,7 @@ export function TodoPanel() {
                     size="icon"
                     className="size-7"
                     onClick={() => deleteTodo.mutate(todo)}
-                    aria-label={`Delete "${todo.title}"`}
+                    aria-label={t("delete", { title: todo.title })}
                   >
                     <Trash2Icon className="size-4" />
                   </Button>

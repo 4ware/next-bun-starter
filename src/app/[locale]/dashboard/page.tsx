@@ -1,34 +1,48 @@
 import { Suspense } from "react";
 import { dehydrate, HydrationBoundary, QueryClient } from "@tanstack/react-query";
+import { createTranslator } from "next-intl";
+import { loadMessages } from "@/i18n/messages";
 import Image from "next/image";
 import { headers } from "next/headers";
-import { redirect } from "next/navigation";
 import { auth } from "@/server/auth";
 import { getTodosForUser } from "@/server/todos-cache";
 import { PICTURE_SIZES } from "@/server/picture";
 import { todosKey } from "@/lib/todos";
+import { redirect } from "@/i18n/navigation";
 import { SignOutButton } from "@/components/sign-out-button";
 import { LivePanel } from "@/components/realtime/live-panel";
 import { TodoPanel } from "@/components/todos/todo-panel";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 /**
- * With Cache Components the static shell below renders instantly; the
- * session-dependent part streams in via Suspense.
+ * Cache Components: the shell (title, picture card, live panel) is a
+ * "use cache" component; the session-dependent part is slotted in as
+ * children and streams via Suspense.
  */
-export default function DashboardPage() {
+export default async function DashboardPage({ params }: { params: Promise<{ locale: string }> }) {
+  const { locale } = await params;
+
+  return (
+    <DashboardShell locale={locale}>
+      <Suspense fallback={<p className="text-muted-foreground text-sm" aria-hidden />}>
+        <SessionContent locale={locale} />
+      </Suspense>
+    </DashboardShell>
+  );
+}
+
+async function DashboardShell({ locale, children }: { locale: string; children: React.ReactNode }) {
+  "use cache";
+  const t = createTranslator({ locale, messages: await loadMessages(locale), namespace: "Dashboard" });
+
   return (
     <main className="mx-auto flex min-h-svh max-w-2xl flex-col gap-6 p-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold tracking-tight">Dashboard</h1>
+        <h1 className="text-2xl font-semibold tracking-tight">{t("title")}</h1>
         <SignOutButton />
       </div>
-      <Suspense
-        fallback={<p className="text-muted-foreground text-sm" aria-hidden />}
-      >
-        <SessionContent />
-      </Suspense>
-      <PictureCard />
+      {children}
+      <PictureCard locale={locale} />
       <LivePanel />
     </main>
   );
@@ -36,17 +50,22 @@ export default function DashboardPage() {
 
 /**
  * The same generated PNG at three sizes via next/image. The source route
- * /picture/[size] is force-static, so in production its bytes live in the
- * Redis-backed incremental cache (see cache-handler.cjs).
+ * /picture/[size] is statically cached, so in production its bytes live in
+ * the Redis-backed incremental cache (see cache-handler.cjs).
  */
-function PictureCard() {
+async function PictureCard({ locale }: { locale: string }) {
+  "use cache";
+  const t = createTranslator({ locale, messages: await loadMessages(locale), namespace: "Pictures" });
+
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Optimized images</CardTitle>
+        <CardTitle>{t("title")}</CardTitle>
         <CardDescription>
-          One generated PNG served from <code className="font-mono">/picture/[size]</code> — statically cached (Redis
-          in production) — rendered by next/image at {PICTURE_SIZES.join(" / ")}px.
+          {t.rich("description", {
+            code: (chunks) => <code className="font-mono">{chunks}</code>,
+            sizes: PICTURE_SIZES.join(" / "),
+          })}
         </CardDescription>
       </CardHeader>
       <CardContent className="flex flex-wrap items-end gap-4">
@@ -56,7 +75,7 @@ function PictureCard() {
               src={`/picture/${size}`}
               width={size}
               height={size}
-              alt={`Generated artwork at ${size}px`}
+              alt={t("alt", { size })}
               className="rounded-lg"
             />
             <figcaption className="text-muted-foreground text-xs">{size}px</figcaption>
@@ -67,9 +86,10 @@ function PictureCard() {
   );
 }
 
-async function SessionContent() {
+async function SessionContent({ locale }: { locale: string }) {
+  const t = createTranslator({ locale, messages: await loadMessages(locale), namespace: "Dashboard" });
   const session = await auth.api.getSession({ headers: await headers() });
-  if (!session) redirect("/sign-in");
+  if (!session) redirect({ href: "/sign-in", locale });
 
   // Prefetch from the "use cache" function (tagged per user, revalidated by
   // the mutation routes) and hydrate the client query cache, so TodoPanel
@@ -77,14 +97,16 @@ async function SessionContent() {
   const queryClient = new QueryClient();
   await queryClient.prefetchQuery({
     queryKey: todosKey,
-    queryFn: () => getTodosForUser(session.user.id),
+    queryFn: () => getTodosForUser(session!.user.id),
   });
 
   return (
     <>
       <p className="text-muted-foreground text-sm">
-        Signed in as <span className="text-foreground font-medium">{session.user.email}</span>. The example todos API
-        lives at <code className="font-mono">/api/todos</code> (Elysia).
+        {t.rich("signedInAs", {
+          email: () => <span className="text-foreground font-medium">{session!.user.email}</span>,
+          code: (chunks) => <code className="font-mono">{chunks}</code>,
+        })}
       </p>
       <HydrationBoundary state={dehydrate(queryClient)}>
         <TodoPanel />

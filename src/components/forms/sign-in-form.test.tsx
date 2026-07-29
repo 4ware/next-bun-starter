@@ -1,12 +1,13 @@
 import { beforeAll, describe, expect, mock, test } from "bun:test";
 import { render, screen } from "@testing-library/react";
+import { IntlWrapper } from "@/test/intl";
 import userEvent from "@testing-library/user-event";
 
 const push = mock();
 const refresh = mock();
 const signInEmail = mock(async () => ({ data: null, error: null }));
 
-mock.module("next/navigation", () => ({
+mock.module("@/i18n/navigation", () => ({
   useRouter: () => ({ push, refresh }),
 }));
 
@@ -23,7 +24,7 @@ beforeAll(async () => {
 describe("SignInForm", () => {
   test("shows a validation error for an invalid email", async () => {
     const user = userEvent.setup();
-    render(<SignInForm />);
+    render(<SignInForm />, { wrapper: IntlWrapper });
 
     await user.type(screen.getByLabelText("Email"), "not-an-email");
     await user.tab();
@@ -33,7 +34,7 @@ describe("SignInForm", () => {
 
   test("disables submit while the form is invalid", async () => {
     const user = userEvent.setup();
-    render(<SignInForm />);
+    render(<SignInForm />, { wrapper: IntlWrapper });
 
     await user.type(screen.getByLabelText("Email"), "not-an-email");
 
@@ -42,7 +43,7 @@ describe("SignInForm", () => {
 
   test("submits valid credentials to better-auth", async () => {
     const user = userEvent.setup();
-    render(<SignInForm />);
+    render(<SignInForm />, { wrapper: IntlWrapper });
 
     await user.type(screen.getByLabelText("Email"), "kai@example.com");
     await user.type(screen.getByLabelText("Password"), "supersecret");

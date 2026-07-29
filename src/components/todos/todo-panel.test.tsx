@@ -1,5 +1,6 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, mock, test } from "bun:test";
 import { render, screen, waitFor } from "@testing-library/react";
+import { IntlWrapper } from "@/test/intl";
 import userEvent from "@testing-library/user-event";
 
 const toastError = mock();
@@ -48,9 +49,11 @@ function jsonResponse(body: unknown, status = 200) {
 /** Each render gets a fresh Providers instance, i.e. a fresh QueryClient/cache. */
 function renderPanel() {
   return render(
-    <Providers>
-      <TodoPanel />
-    </Providers>,
+    <IntlWrapper>
+      <Providers>
+        <TodoPanel />
+      </Providers>
+    </IntlWrapper>,
   );
 }
 

@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -74,6 +75,7 @@ function useRealtime() {
 }
 
 export function LivePanel() {
+  const t = useTranslations("Live");
   const { status, users, feed, send } = useRealtime();
   const [text, setText] = useState("");
   const feedEndRef = useRef<HTMLDivElement | null>(null);
@@ -94,7 +96,7 @@ export function LivePanel() {
     <Card>
       <CardHeader>
         <div className="flex items-center justify-between">
-          <CardTitle>Live lobby</CardTitle>
+          <CardTitle>{t("title")}</CardTitle>
           <span className="text-muted-foreground flex items-center gap-1.5 text-xs">
             <span
               aria-hidden
@@ -102,16 +104,16 @@ export function LivePanel() {
                 status === "open" ? "bg-emerald-500" : status === "connecting" ? "bg-amber-500" : "bg-destructive"
               }`}
             />
-            {status === "open" ? "Connected" : status === "connecting" ? "Connecting…" : "Reconnecting…"}
+            {status === "open" ? t("connected") : status === "connecting" ? t("connecting") : t("reconnecting")}
           </span>
         </div>
         <CardDescription>
-          {users.length === 0 ? "Nobody online" : `Online: ${users.map((u) => u.name).join(", ")}`}
+          {users.length === 0 ? t("nobodyOnline") : t("online", { names: users.map((u) => u.name).join(", ") })}
         </CardDescription>
       </CardHeader>
       <CardContent className="grid gap-4">
-        <div className="max-h-64 space-y-2 overflow-y-auto text-sm" role="log" aria-label="Lobby activity">
-          {feed.length === 0 && <p className="text-muted-foreground">No activity yet. Say hi!</p>}
+        <div className="max-h-64 space-y-2 overflow-y-auto text-sm" role="log" aria-label={t("activityLog")}>
+          {feed.length === 0 && <p className="text-muted-foreground">{t("noActivity")}</p>}
           {feed.map((item) => (
             <p key={item.key}>
               {item.type === "chat" ? (
@@ -120,7 +122,7 @@ export function LivePanel() {
                 </>
               ) : (
                 <span className="text-muted-foreground">
-                  {item.user.name} {item.type === "join" ? "joined" : "left"}
+                  {item.type === "join" ? t("joined", { name: item.user.name }) : t("left", { name: item.user.name })}
                 </span>
               )}
             </p>
@@ -131,12 +133,12 @@ export function LivePanel() {
           <Input
             value={text}
             onChange={(e) => setText(e.target.value)}
-            placeholder="Send a message"
+            placeholder={t("placeholder")}
             maxLength={500}
-            aria-label="Message"
+            aria-label={t("message")}
           />
           <Button type="submit" disabled={status !== "open" || !text.trim()}>
-            Send
+            {t("send")}
           </Button>
         </form>
       </CardContent>

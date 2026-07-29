@@ -1,0 +1,87 @@
+{
+  "Home": {
+    "title": "Next Bun Starter",
+    "tagline": "Next.js 16 · Bun · Elysia · Drizzle · better-auth · Tailwind v4 · shadcn/ui · TanStack Form · Zod",
+    "signIn": "Anmelden",
+    "createAccount": "Konto erstellen",
+    "goToDashboard": "Zum Dashboard"
+  },
+  "SignIn": {
+    "title": "Anmelden",
+    "description": "Mit E-Mail-Adresse und Passwort anmelden.",
+    "noAccount": "Noch kein Konto?",
+    "createOne": "Jetzt erstellen"
+  },
+  "SignUp": {
+    "title": "Konto erstellen",
+    "description": "Mit E-Mail-Adresse und Passwort registrieren.",
+    "alreadyRegistered": "Bereits registriert?",
+    "signIn": "Anmelden"
+  },
+  "AuthForm": {
+    "name": "Name",
+    "organizationName": "Name der Organisation",
+    "email": "E-Mail",
+    "password": "Passwort",
+    "confirmPassword": "Passwort bestätigen",
+    "signIn": "Anmelden",
+    "createAccount": "Konto erstellen",
+    "signInFailed": "Anmeldung fehlgeschlagen",
+    "signUpFailed": "Registrierung fehlgeschlagen",
+    "createOrganizationFailed": "Organisation konnte nicht erstellt werden"
+  },
+  "Validation": {
+    "email": "Bitte eine gültige E-Mail-Adresse eingeben",
+    "passwordMin": "Das Passwort muss mindestens 8 Zeichen lang sein",
+    "nameMin": "Der Name muss mindestens 2 Zeichen lang sein",
+    "organizationNameMin": "Der Name der Organisation muss mindestens 2 Zeichen lang sein",
+    "passwordsMismatch": "Die Passwörter stimmen nicht überein"
+  },
+  "Form": {
+    "submitting": "Wird gesendet…"
+  },
+  "Dashboard": {
+    "title": "Dashboard",
+    "signOut": "Abmelden",
+    "signedInAs": "Angemeldet als <email></email>. Die Beispiel-Todos-API läuft unter <code>/api/todos</code> (Elysia)."
+  },
+  "Todos": {
+    "title": "Todos",
+    "description": "Angebunden an die Elysia-API unter /api/todos — Fehler erscheinen als Toasts.",
+    "placeholder": "Was steht an?",
+    "newTodoTitle": "Titel des neuen Todos",
+    "add": "Hinzufügen",
+    "loading": "Lädt…",
+    "empty": "Noch nichts.",
+    "markDone": "\"{title}\" als erledigt markieren",
+    "markNotDone": "\"{title}\" als nicht erledigt markieren",
+    "delete": "\"{title}\" löschen",
+    "uploadImage": "Bild für \"{title}\" hochladen",
+    "imageFor": "Bild zu \"{title}\"",
+    "imageUploaded": "Bild hochgeladen",
+    "uploadFailed": "Upload fehlgeschlagen ({reason})"
+  },
+  "Pictures": {
+    "title": "Optimierte Bilder",
+    "description": "Ein generiertes PNG von <code>/picture/[size]</code> — statisch gecacht (Redis in Produktion) — gerendert mit next/image in {sizes}px.",
+    "alt": "Generierte Grafik in {size}px"
+  },
+  "Live": {
+    "title": "Live-Lobby",
+    "connected": "Verbunden",
+    "connecting": "Verbinde…",
+    "reconnecting": "Verbinde neu…",
+    "nobodyOnline": "Niemand online",
+    "online": "Online: {names}",
+    "noActivity": "Noch keine Aktivität. Sag hallo!",
+    "joined": "{name} ist beigetreten",
+    "left": "{name} hat verlassen",
+    "activityLog": "Lobby-Aktivität",
+    "message": "Nachricht",
+    "placeholder": "Nachricht senden",
+    "send": "Senden"
+  },
+  "LocaleSwitcher": {
+    "label": "Sprache"
+  }
+}
