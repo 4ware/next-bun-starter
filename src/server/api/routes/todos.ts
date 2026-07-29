@@ -1,6 +1,7 @@
 import { revalidateTag } from "next/cache";
 import { and, desc, eq } from "drizzle-orm";
-import { Elysia, t } from "elysia";
+import { Elysia } from "elysia";
+import { createTodoSchema, patchTodoSchema, todoIdParamsSchema, todoImageSchema } from "@/lib/validators/todos";
 import { db } from "@/server/db";
 import { todos, uploads } from "@/server/db/schema";
 import { deleteUploadFile, saveUploadFile } from "@/server/storage";
@@ -34,7 +35,7 @@ export const todosRoutes = new Elysia({ prefix: "/todos" })
     },
     {
       authenticated: true,
-      body: t.Object({ title: t.String({ minLength: 1, maxLength: 200 }) }),
+      body: createTodoSchema,
     },
   )
   .patch(
@@ -51,12 +52,8 @@ export const todosRoutes = new Elysia({ prefix: "/todos" })
     },
     {
       authenticated: true,
-      params: t.Object({ id: t.String({ format: "uuid" }) }),
-      // minProperties rejects an empty patch, which drizzle's .set() cannot handle
-      body: t.Object(
-        { title: t.Optional(t.String({ minLength: 1, maxLength: 200 })), done: t.Optional(t.Boolean()) },
-        { minProperties: 1 },
-      ),
+      params: todoIdParamsSchema,
+      body: patchTodoSchema,
     },
   )
   .post(
@@ -90,10 +87,8 @@ export const todosRoutes = new Elysia({ prefix: "/todos" })
     },
     {
       authenticated: true,
-      params: t.Object({ id: t.String({ format: "uuid" }) }),
-      body: t.Object({
-        file: t.File({ type: ["image/jpeg", "image/png", "image/webp", "image/gif"], maxSize: "5m" }),
-      }),
+      params: todoIdParamsSchema,
+      body: todoImageSchema,
     },
   )
   .delete(
@@ -113,6 +108,6 @@ export const todosRoutes = new Elysia({ prefix: "/todos" })
     },
     {
       authenticated: true,
-      params: t.Object({ id: t.String({ format: "uuid" }) }),
+      params: todoIdParamsSchema,
     },
   );

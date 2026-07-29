@@ -15,8 +15,13 @@ export const api = new Elysia({ prefix: "/api" })
   .onError(({ code, error, set }) => {
     if (code === "VALIDATION") {
       set.status = 422;
-      const [first] = error.all;
-      return { error: (first && "summary" in first && first.summary) || "Invalid request" };
+      // zod (Standard Schema) issues carry `message`; TypeBox ones `summary`
+      const [first] = error.all as unknown as Array<Record<string, unknown>>;
+      const message =
+        (typeof first?.message === "string" && first.message) ||
+        (typeof first?.summary === "string" && first.summary) ||
+        "Invalid request";
+      return { error: message };
     }
     if (code === "PARSE") {
       set.status = 400;

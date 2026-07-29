@@ -1,5 +1,6 @@
 import { and, eq } from "drizzle-orm";
-import { Elysia, t } from "elysia";
+import { Elysia } from "elysia";
+import { z } from "zod";
 import { db } from "@/server/db";
 import { uploads } from "@/server/db/schema";
 import { readUploadFile } from "@/server/storage";
@@ -32,6 +33,6 @@ export const uploadsRoutes = new Elysia({ prefix: "/uploads" }).use(authPlugin).
   },
   {
     authenticated: true,
-    params: t.Object({ id: t.String({ format: "uuid" }) }),
+    params: z.object({ id: z.uuid() }),
   },
 );
