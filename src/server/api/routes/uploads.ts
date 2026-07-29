@@ -2,12 +2,14 @@ import { and, eq } from "drizzle-orm";
 import { Elysia, t } from "elysia";
 import { db } from "@/server/db";
 import { uploads } from "@/server/db/schema";
+import { readUploadFile } from "@/server/storage";
 import { authPlugin } from "../auth-plugin";
 
 /**
- * Serves uploaded images, scoped to the owning user. Upload ids are
- * immutable (replacing a todo image creates a new row), so responses can
- * be cached indefinitely — but privately, since they need the session.
+ * Serves uploaded images: ownership + content type come from the DB row,
+ * the bytes from the file system. Upload ids are immutable (replacing a
+ * todo image creates a new row), so responses can be cached indefinitely —
+ * but privately, since they need the session.
  */
 export const uploadsRoutes = new Elysia({ prefix: "/uploads" }).use(authPlugin).get(
   "/:id",
@@ -18,7 +20,10 @@ export const uploadsRoutes = new Elysia({ prefix: "/uploads" }).use(authPlugin).
       .where(and(eq(uploads.id, params.id), eq(uploads.userId, user.id)));
     if (!upload) return status(404, { error: "Not found" });
 
-    return new Response(new Uint8Array(upload.data), {
+    const data = await readUploadFile(upload.id);
+    if (!data) return status(404, { error: "Not found" });
+
+    return new Response(new Uint8Array(data), {
       headers: {
         "Content-Type": upload.contentType,
         "Cache-Control": "private, max-age=31536000, immutable",

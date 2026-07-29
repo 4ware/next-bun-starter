@@ -13,6 +13,7 @@ export const env = createEnv({
     BETTER_AUTH_URL: z.url().default("http://localhost:3000"),
     REALTIME_PORT: z.coerce.number().int().default(3001),
     REDIS_URL: z.url().default("redis://localhost:6379"),
+    UPLOADS_DIR: z.string().min(1).default(".uploads"),
   },
   client: {
     NEXT_PUBLIC_APP_URL: z.url().default("http://localhost:3000"),

@@ -3,6 +3,7 @@ import { and, desc, eq } from "drizzle-orm";
 import { Elysia, t } from "elysia";
 import { db } from "@/server/db";
 import { todos, uploads } from "@/server/db/schema";
+import { deleteUploadFile, saveUploadFile } from "@/server/storage";
 import { todosTag } from "@/server/todos-cache";
 import { authPlugin } from "../auth-plugin";
 
@@ -70,15 +71,19 @@ export const todosRoutes = new Elysia({ prefix: "/todos" })
       const data = Buffer.from(await body.file.arrayBuffer());
       const [upload] = await db
         .insert(uploads)
-        .values({ userId: user.id, contentType: body.file.type, data })
+        .values({ userId: user.id, contentType: body.file.type })
         .returning({ id: uploads.id });
+      await saveUploadFile(upload!.id, data);
       const [updated] = await db
         .update(todos)
         .set({ imageId: upload!.id })
         .where(eq(todos.id, todo.id))
         .returning();
-      // replaced image is no longer referenced — drop the old bytes
-      if (todo.imageId) await db.delete(uploads).where(eq(uploads.id, todo.imageId));
+      // replaced image is no longer referenced — drop row and file
+      if (todo.imageId) {
+        await db.delete(uploads).where(eq(uploads.id, todo.imageId));
+        await deleteUploadFile(todo.imageId);
+      }
 
       revalidateTodosCache(user.id);
       return updated;
@@ -99,7 +104,10 @@ export const todosRoutes = new Elysia({ prefix: "/todos" })
         .where(and(eq(todos.id, params.id), eq(todos.userId, user.id)))
         .returning();
       if (!todo) return status(404, { error: "Not found" });
-      if (todo.imageId) await db.delete(uploads).where(eq(uploads.id, todo.imageId));
+      if (todo.imageId) {
+        await db.delete(uploads).where(eq(uploads.id, todo.imageId));
+        await deleteUploadFile(todo.imageId);
+      }
       revalidateTodosCache(user.id);
       return { deleted: todo.id };
     },

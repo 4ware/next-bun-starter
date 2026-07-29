@@ -12,3 +12,4 @@ drizzle/meta/_journal.json.bak
 test-results/
 playwright-report/
 e2e/.auth/
+.uploads/
