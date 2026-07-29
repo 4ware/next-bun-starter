@@ -1,6 +1,7 @@
 import { Elysia } from "elysia";
 import { todosRoutes } from "./routes/todos";
 import { uploadsRoutes } from "./routes/uploads";
+import { detectLocale, translateValidationMessage } from "./validation-messages";
 
 /**
  * The Elysia app is mounted inside Next.js via the optional catch-all
@@ -12,7 +13,7 @@ import { uploadsRoutes } from "./routes/uploads";
  */
 export const api = new Elysia({ prefix: "/api" })
   // Normalize every error into { error: string } so clients can toast it directly.
-  .onError(({ code, error, set }) => {
+  .onError(({ code, error, set, request }) => {
     if (code === "VALIDATION") {
       set.status = 422;
       // zod (Standard Schema) issues carry `message`; TypeBox ones `summary`
@@ -21,7 +22,8 @@ export const api = new Elysia({ prefix: "/api" })
         (typeof first?.message === "string" && first.message) ||
         (typeof first?.summary === "string" && first.summary) ||
         "Invalid request";
-      return { error: message };
+      // validators emit message keys — localize them per request
+      return { error: translateValidationMessage(detectLocale(request), message) };
     }
     if (code === "PARSE") {
       set.status = 400;

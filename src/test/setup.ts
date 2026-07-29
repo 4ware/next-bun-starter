@@ -4,6 +4,10 @@ import { GlobalRegistrator } from "@happy-dom/global-registrator";
  * server tests need a real network socket, not happy-dom's window-bound one. */
 export const NativeWebSocket = globalThis.WebSocket;
 
+/** Bun's native Request — happy-dom's drops forbidden headers like Cookie,
+ * which server tests need to send (the API reads NEXT_LOCALE from it). */
+export const NativeRequest = globalThis.Request;
+
 GlobalRegistrator.register();
 
 // Test-only env defaults so server modules (db, auth) can be imported.

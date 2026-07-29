@@ -30,6 +30,14 @@
     "signUpFailed": "Sign up failed",
     "createOrganizationFailed": "Failed to create organization"
   },
+  "ApiValidation": {
+    "titleRequired": "Title must not be empty",
+    "titleTooLong": "Title must be 200 characters or less",
+    "emptyPatch": "At least one field must be provided",
+    "invalidId": "Invalid id",
+    "imageTooLarge": "Image must be 5 MB or smaller",
+    "imageInvalidType": "Only JPEG, PNG, WebP or GIF images are allowed"
+  },
   "Validation": {
     "email": "Enter a valid email address",
     "passwordMin": "Password must be at least 8 characters",

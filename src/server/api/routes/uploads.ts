@@ -1,6 +1,7 @@
 import { and, eq } from "drizzle-orm";
 import { createSelectSchema } from "drizzle-zod";
 import { Elysia } from "elysia";
+import { z } from "zod";
 import { db } from "@/server/db";
 import { uploads } from "@/server/db/schema";
 import { readUploadFile } from "@/server/storage";
@@ -33,6 +34,6 @@ export const uploadsRoutes = new Elysia({ prefix: "/uploads" }).use(authPlugin).
   },
   {
     authenticated: true,
-    params: createSelectSchema(uploads).pick({ id: true }),
+    params: createSelectSchema(uploads, { id: z.uuid("invalidId") }).pick({ id: true }),
   },
 );

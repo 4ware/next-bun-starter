@@ -10,9 +10,12 @@ import { todos } from "@/server/db/schema";
  * drizzle-zod refinement argument (the DB column is unbounded `text`).
  */
 
-const titleRules = { title: (schema: z.ZodString) => schema.min(1).max(200) };
+// Messages are stable KEYS from the ApiValidation namespace — the API's
+// onError translates them into the request's locale
+// (src/server/api/validation-messages.ts).
+const titleRules = { title: (schema: z.ZodString) => schema.min(1, "titleRequired").max(200, "titleTooLong") };
 
-export const todoIdParamsSchema = createSelectSchema(todos).pick({ id: true });
+export const todoIdParamsSchema = createSelectSchema(todos, { id: z.uuid("invalidId") }).pick({ id: true });
 
 export const createTodoSchema = createInsertSchema(todos, titleRules).pick({ title: true });
 
@@ -20,12 +23,12 @@ export const createTodoSchema = createInsertSchema(todos, titleRules).pick({ tit
 // contained unknown fields — drizzle's .set() cannot handle an empty object
 export const patchTodoSchema = createUpdateSchema(todos, titleRules)
   .pick({ title: true, done: true })
-  .refine((value) => Object.keys(value).length > 0, { message: "At least one field must be provided" });
+  .refine((value) => Object.keys(value).length > 0, { message: "emptyPatch" });
 
 // not a DB field — the file arrives as multipart and is stored on disk
 export const todoImageSchema = z.object({
   file: z
     .file()
-    .max(5 * 1024 * 1024, "Image must be 5 MB or smaller")
-    .mime(["image/jpeg", "image/png", "image/webp", "image/gif"]),
+    .max(5 * 1024 * 1024, "imageTooLarge")
+    .mime(["image/jpeg", "image/png", "image/webp", "image/gif"], "imageInvalidType"),
 });
