@@ -57,6 +57,7 @@
     "markNotDone": "\"{title}\" als nicht erledigt markieren",
     "delete": "\"{title}\" löschen",
     "uploadImage": "Bild für \"{title}\" hochladen",
+    "uploading": "Bild für \"{title}\" wird hochgeladen",
     "imageFor": "Bild zu \"{title}\"",
     "imageUploaded": "Bild hochgeladen",
     "uploadFailed": "Upload fehlgeschlagen ({reason})"

@@ -57,6 +57,7 @@
     "markNotDone": "Mark \"{title}\" as not done",
     "delete": "Delete \"{title}\"",
     "uploadImage": "Upload image for \"{title}\"",
+    "uploading": "Uploading image for \"{title}\"",
     "imageFor": "Image for \"{title}\"",
     "imageUploaded": "Image uploaded",
     "uploadFailed": "Upload failed ({reason})"

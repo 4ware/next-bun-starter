@@ -49,14 +49,26 @@ test.describe.serial("todo CRUD", () => {
   test("uploads an image via react-uploady and persists it", async ({ page }) => {
     await page.goto("/dashboard");
 
+    // slow the upload down so the progress indicator is observable
+    await page.route("**/api/todos/*/image", async (route) => {
+      await new Promise((resolve) => setTimeout(resolve, 700));
+      await route.continue();
+    });
+
     const [chooser] = await Promise.all([
       page.waitForEvent("filechooser"),
       page.getByRole("button", { name: `Upload image for "${title}"` }).click(),
     ]);
     await chooser.setFiles({ name: "art.png", mimeType: "image/png", buffer: generatePicture(64) });
 
+    // progress indicator replaces the upload button while in flight …
+    await expect(page.getByRole("progressbar", { name: `Uploading image for "${title}"` })).toBeVisible();
+
     const thumbnail = page.getByRole("img", { name: `Image for "${title}"` });
     await expect(thumbnail).toBeVisible();
+    // … and disappears once the upload finished
+    await expect(page.getByRole("progressbar")).toHaveCount(0);
+    await page.unroute("**/api/todos/*/image");
 
     // survives a reload, i.e. the image is stored server-side
     await page.reload();
