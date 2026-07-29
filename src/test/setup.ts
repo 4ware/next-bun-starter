@@ -1,5 +1,9 @@
 import { GlobalRegistrator } from "@happy-dom/global-registrator";
 
+/** Bun's native WebSocket, captured before happy-dom replaces the global —
+ * server tests need a real network socket, not happy-dom's window-bound one. */
+export const NativeWebSocket = globalThis.WebSocket;
+
 GlobalRegistrator.register();
 
 // Test-only env defaults so server modules (db, auth) can be imported.
